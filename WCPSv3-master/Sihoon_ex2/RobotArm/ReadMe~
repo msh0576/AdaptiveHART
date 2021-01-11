@@ -1,0 +1,28 @@
+#####################
+# Run WCPS
+#####################
+
+// We only run the experiment on two physical systems
+
+1. run TOSSIM: 
+	command: python tossim-event-server.py arv1 arv2 arv3 arv4 
+						(Task1 period, Task1 rxtx, Task2 period, Task2 rxtx)
+
+
+
+1. robot_arm_main.m file: run a simulink 
+
+
+
+
+
+#####################
+# Repeats WCPS 
+#####################
+
+1. run TOSSIM_interface.py file
+	command: python TOSSIM_interface.py
+
+2. run Execute_main.m file
+
+

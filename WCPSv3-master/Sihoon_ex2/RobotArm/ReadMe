@@ -1,0 +1,50 @@
+#####################
+# Run WCPS
+#####################
+
+// We only run the experiment on two physical systems
+
+1. run TOSSIM: 
+	command: python tossim-event-server.py arv1 arv2 arv3 arv4 
+						(Task1 period, Task1 rxtx, Task2 period, Task2 rxtx)
+
+
+
+1. robot_arm_main.m file: run a simulink 
+
+
+
+
+
+#####################
+# Repeats WCPS 
+#####################
+
+1. run TOSSIM_interface.py file
+	command: python TOSSIM_interface.py
+
+2. run Execute_main.m file
+
+
+
+
+##################################
+# Evaluates Broadcast_interval
+##################################
+
+1. tossim file: 'tossim-event-server_broadcast_interval.py'
+
+2. simulink file: 'robot_arm_simul_broadcast_interval'
+
+3. one simulation:
+	run tossim file, and matlab 'robot_arm_main_broadcast_interval'
+	careful the save file variables in the matlab file
+
+4. multipl simulation:
+	run 'TOSSIM_interface.py'
+	run matlab 'Execute_main_broadcast_interval' file
+
+5. simulation results:
+	run matlab 'Plot_broadcast_interval' file
+
+

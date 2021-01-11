@@ -1,0 +1,212 @@
+<html>
+<body>
+<script src="resources/eml_report_loadable_data.js"></script>
+<pre class="code">
+<span class="srcline"><span class="lineno"><a href="1,1" id="srcline1">  1</a></span><span class="line"><span class="message fatal" id="M2F1C">f</span>unction [u_out_P1, broad_interv_P1, u_out_P2]  = Tossim_block(u_in_P1, u_in_P2, clock)</span></span>
+<span class="srcline"><span class="lineno"><a href="1,2" id="srcline2">  2</a></span><span class="line"><span class="comment">% Inputs:</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,3" id="srcline3">  3</a></span><span class="line"><span class="comment">% ymea: measurement from structure</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,4" id="srcline4">  4</a></span><span class="line"><span class="comment">% Outputs:</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,5" id="srcline5">  5</a></span><span class="line"><span class="comment">% ymea1: measurement output</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,6" id="srcline6">  6</a></span><span class="line"><span class="comment">% ydelay: delay traces</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,7" id="srcline7">  7</a></span><span class="line">persistent tmp_u_in_P1 tmp_u_in_P2 prev_u_out_P1 prev_u_out_P2    <span class="comment">% delay trace</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,8" id="srcline8">  8</a></span><span class="line">persistent prev_P1_actu_inter prev_P2_actu_inter prev_P1_clock prev_P2_clock <span class="comment">% inter arrival time</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,9" id="srcline9">  9</a></span><span class="line">persistent tmp_T1_period tmp_T2_period tmp_rcv_flag1 period_cunt1 windowbuff windowsize</span></span>
+<span class="srcline"><span class="lineno"><a href="1,10" id="srcline10"> 10</a></span><span class="line">persistent tmp_T1_maxTx tmp_T1_noise</span></span>
+<span class="srcline"><span class="lineno"><a href="1,11" id="srcline11"> 11</a></span><span class="line">persistent i                 <span class="comment">% count </span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,12" id="srcline12"> 12</a></span><span class="line">persistent tossim_flag</span></span>
+<span class="srcline"><span class="lineno"><a href="1,13" id="srcline13"> 13</a></span><span class="line">global ydelay_global delta Task_periods</span></span>
+<span class="srcline"><span class="lineno"><a href="1,14" id="srcline14"> 14</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,15" id="srcline15"> 15</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,16" id="srcline16"> 16</a></span><span class="line"><span class="comment">% allow these matlab functions to be used in Embedded Matlab block</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,17" id="srcline17"> 17</a></span><span class="line">eml.extrinsic('python');</span></span>
+<span class="srcline"><span class="lineno"><a href="1,18" id="srcline18"> 18</a></span><span class="line">eml.extrinsic('num2str');</span></span>
+<span class="srcline"><span class="lineno"><a href="1,19" id="srcline19"> 19</a></span><span class="line">eml.extrinsic('str2num');</span></span>
+<span class="srcline"><span class="lineno"><a href="1,20" id="srcline20"> 20</a></span><span class="line">eml.extrinsic('delay_summary');</span></span>
+<span class="srcline"><span class="lineno"><a href="1,21" id="srcline21"> 21</a></span><span class="line">eml.extrinsic('disp');</span></span>
+<span class="srcline"><span class="lineno"><a href="1,22" id="srcline22"> 22</a></span><span class="line">eml.extrinsic('ps_aggregation_broadcast_interval');</span></span>
+<span class="srcline"><span class="lineno"><a href="1,23" id="srcline23"> 23</a></span><span class="line">eml.extrinsic('for');</span></span>
+<span class="srcline"><span class="lineno"><a href="1,24" id="srcline24"> 24</a></span><span class="line">eml.extrinsic('end');</span></span>
+<span class="srcline"><span class="lineno"><a href="1,25" id="srcline25"> 25</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,26" id="srcline26"> 26</a></span><span class="line">if isempty(i)</span></span>
+<span class="srcline"><span class="lineno"><a href="1,27" id="srcline27"> 27</a></span><span class="line">    i = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,28" id="srcline28"> 28</a></span><span class="line">    <span class="comment">%past_ymea = 0;</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,29" id="srcline29"> 29</a></span><span class="line">    tmp_u_in_P1 = u_in_P1;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,30" id="srcline30"> 30</a></span><span class="line">    tmp_u_in_P2 = u_in_P2;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,31" id="srcline31"> 31</a></span><span class="line">    prev_u_out_P1 = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,32" id="srcline32"> 32</a></span><span class="line">    prev_u_out_P2 = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,33" id="srcline33"> 33</a></span><span class="line">    tossim_flag = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,34" id="srcline34"> 34</a></span><span class="line">    prev_P1_actu_inter = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,35" id="srcline35"> 35</a></span><span class="line">    prev_P2_actu_inter = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,36" id="srcline36"> 36</a></span><span class="line">    prev_P1_clock = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,37" id="srcline37"> 37</a></span><span class="line">    prev_P2_clock = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,38" id="srcline38"> 38</a></span><span class="line">    P1_actu_inter = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,39" id="srcline39"> 39</a></span><span class="line">    P2_actu_inter = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,40" id="srcline40"> 40</a></span><span class="line">    tmp_T1_period = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,41" id="srcline41"> 41</a></span><span class="line">    tmp_T2_period = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,42" id="srcline42"> 42</a></span><span class="line">    tmp_rcv_flag1 = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,43" id="srcline43"> 43</a></span><span class="line">    period_cunt1 = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,44" id="srcline44"> 44</a></span><span class="line">    windowsize = 20;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,45" id="srcline45"> 45</a></span><span class="line">    windowbuff = zeros(1,windowsize);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,46" id="srcline46"> 46</a></span><span class="line">    tmp_T1_maxTx = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,47" id="srcline47"> 47</a></span><span class="line">    tmp_T1_noise = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,48" id="srcline48"> 48</a></span><span class="line">end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,49" id="srcline49"> 49</a></span><span class="line">i = i+1;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,50" id="srcline50"> 50</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,51" id="srcline51"> 51</a></span><span class="line"><span class="comment">%[row column] = size(Task_period_time);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,52" id="srcline52"> 52</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,53" id="srcline53"> 53</a></span><span class="line">ydelay = [1 0 0 0 0 0 0 0 0]';</span></span>
+<span class="srcline"><span class="lineno"><a href="1,54" id="srcline54"> 54</a></span><span class="line"><span class="comment">% call python to communicate with TOSSIM</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,55" id="srcline55"> 55</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,56" id="srcline56"> 56</a></span><span class="line"><span class="comment">% where clock increase with 1ms period</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,57" id="srcline57"> 57</a></span><span class="line">TOSSIM_step_size = 0.01;  <span class="comment">% 10ms</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,58" id="srcline58"> 58</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,59" id="srcline59"> 59</a></span><span class="line">call_count = 1; <span class="comment">%Superframelength</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,60" id="srcline60"> 60</a></span><span class="line">rssi = -69;<span class="comment">%sensor rssi</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,61" id="srcline61"> 61</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,62" id="srcline62"> 62</a></span><span class="line"><span class="comment">%% Tossim results </span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,63" id="srcline63"> 63</a></span><span class="line"><span class="comment">% run Tossim once every 10ms</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,64" id="srcline64"> 64</a></span><span class="line">if mod(clock, TOSSIM_step_size) == 0</span></span>
+<span class="srcline"><span class="lineno"><a href="1,65" id="srcline65"> 65</a></span><span class="line">    if tossim_flag == 0</span></span>
+<span class="srcline"><span class="lineno"><a href="1,66" id="srcline66"> 66</a></span><span class="line">        tossim_flag = tossim_flag + 1;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,67" id="srcline67"> 67</a></span><span class="line">        clock;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,68" id="srcline68"> 68</a></span><span class="line">        [resultz] = ps_aggregation_broadcast_interval(call_count, rssi, clock); <span class="comment">%here call TOSSIM Client ----yh</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,69" id="srcline69"> 69</a></span><span class="line">        end_to_end_delivery_result_aggregated = sum(resultz);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,70" id="srcline70"> 70</a></span><span class="line">        [delay] = delay_summary(resultz);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,71" id="srcline71"> 71</a></span><span class="line">        ydelay = delay';</span></span>
+<span class="srcline"><span class="lineno"><a href="1,72" id="srcline72"> 72</a></span><span class="line">        resultz;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,73" id="srcline73"> 73</a></span><span class="line">        </span></span>
+<span class="srcline"><span class="lineno"><a href="1,74" id="srcline74"> 74</a></span><span class="line">        <span class="comment">% Check T1 Period %</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,75" id="srcline75"> 75</a></span><span class="line">        tmp_T1_period = resultz(1,8) / 100; <span class="comment">% convert into ms</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,76" id="srcline76"> 76</a></span><span class="line">        <span class="comment">% Check T1 maxTx %</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,77" id="srcline77"> 77</a></span><span class="line">        tmp_T1_maxTx = resultz(1,7);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,78" id="srcline78"> 78</a></span><span class="line">        <span class="comment">% Check noise %</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,79" id="srcline79"> 79</a></span><span class="line">        tmp_T1_noise = resultz(1,6);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,80" id="srcline80"> 80</a></span><span class="line">        </span></span>
+<span class="srcline"><span class="lineno"><a href="1,81" id="srcline81"> 81</a></span><span class="line">        <span class="comment">%% Check P1 actuation PDR</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,82" id="srcline82"> 82</a></span><span class="line">        <span class="comment">% Check T1 receive in a period %   </span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,83" id="srcline83"> 83</a></span><span class="line">        if ydelay(2,1) == 1     <span class="comment">% Task1 receive</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,84" id="srcline84"> 84</a></span><span class="line">            tmp_rcv_flag1 = 1;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,85" id="srcline85"> 85</a></span><span class="line">        end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,86" id="srcline86"> 86</a></span><span class="line">        </span></span>
+<span class="srcline"><span class="lineno"><a href="1,87" id="srcline87"> 87</a></span><span class="line">        <span class="comment">% for calculating PDR and for updating u_in_P1</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,88" id="srcline88"> 88</a></span><span class="line">        if mod(clock, tmp_T1_period) == 0 </span></span>
+<span class="srcline"><span class="lineno"><a href="1,89" id="srcline89"> 89</a></span><span class="line">            <span class="comment">% PDR </span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,90" id="srcline90"> 90</a></span><span class="line">            tmp_period_cunt1 = mod(period_cunt1, windowsize);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,91" id="srcline91"> 91</a></span><span class="line">            if tmp_rcv_flag1 == 1</span></span>
+<span class="srcline"><span class="lineno"><a href="1,92" id="srcline92"> 92</a></span><span class="line">                windowbuff(1,tmp_period_cunt1+1) = 1;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,93" id="srcline93"> 93</a></span><span class="line">            else</span></span>
+<span class="srcline"><span class="lineno"><a href="1,94" id="srcline94"> 94</a></span><span class="line">                windowbuff(1,tmp_period_cunt1+1) = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,95" id="srcline95"> 95</a></span><span class="line">            end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,96" id="srcline96"> 96</a></span><span class="line">            period_cunt1 = period_cunt1 + 1;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,97" id="srcline97"> 97</a></span><span class="line">            tmp_rcv_flag1 = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,98" id="srcline98"> 98</a></span><span class="line">            </span></span>
+<span class="srcline"><span class="lineno"><a href="1,99" id="srcline99"> 99</a></span><span class="line">            <span class="comment">% update</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,100" id="srcline100">100</a></span><span class="line">            tmp_u_in_P1 = u_in_P1;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,101" id="srcline101">101</a></span><span class="line">        end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,102" id="srcline102">102</a></span><span class="line">        </span></span>
+<span class="srcline"><span class="lineno"><a href="1,103" id="srcline103">103</a></span><span class="line">        <span class="comment">% P2 u update</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,104" id="srcline104">104</a></span><span class="line">        tmp_T2_period = Task_periods(2,1)*0.01;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,105" id="srcline105">105</a></span><span class="line">        if mod(clock, tmp_T2_period) == 0</span></span>
+<span class="srcline"><span class="lineno"><a href="1,106" id="srcline106">106</a></span><span class="line">            tmp_u_in_P2 = u_in_P2;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,107" id="srcline107">107</a></span><span class="line">        end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,108" id="srcline108">108</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,109" id="srcline109">109</a></span><span class="line">        </span></span>
+<span class="srcline"><span class="lineno"><a href="1,110" id="srcline110">110</a></span><span class="line">    else</span></span>
+<span class="srcline"><span class="lineno"><a href="1,111" id="srcline111">111</a></span><span class="line">        resultz = [0 0 0 0 0 0 0 0];</span></span>
+<span class="srcline"><span class="lineno"><a href="1,112" id="srcline112">112</a></span><span class="line">        [delay] = delay_summary(resultz);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,113" id="srcline113">113</a></span><span class="line">        ydelay = delay';</span></span>
+<span class="srcline"><span class="lineno"><a href="1,114" id="srcline114">114</a></span><span class="line">    end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,115" id="srcline115">115</a></span><span class="line">else</span></span>
+<span class="srcline"><span class="lineno"><a href="1,116" id="srcline116">116</a></span><span class="line">    tossim_flag = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,117" id="srcline117">117</a></span><span class="line">    resultz = [0 0 0 0 0 0 0 0];</span></span>
+<span class="srcline"><span class="lineno"><a href="1,118" id="srcline118">118</a></span><span class="line">    [delay] = delay_summary(resultz);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,119" id="srcline119">119</a></span><span class="line">    ydelay = delay';</span></span>
+<span class="srcline"><span class="lineno"><a href="1,120" id="srcline120">120</a></span><span class="line">end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,121" id="srcline121">121</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,122" id="srcline122">122</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,123" id="srcline123">123</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,124" id="srcline124">124</a></span><span class="line"><span class="comment">%% Outputs</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,125" id="srcline125">125</a></span><span class="line">for i_yg = 1:9</span></span>
+<span class="srcline"><span class="lineno"><a href="1,126" id="srcline126">126</a></span><span class="line">    ydelay_global(i_yg, 1) = ydelay(i_yg, 1);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,127" id="srcline127">127</a></span><span class="line">end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,128" id="srcline128">128</a></span><span class="line">delay = ydelay';</span></span>
+<span class="srcline"><span class="lineno"><a href="1,129" id="srcline129">129</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,130" id="srcline130">130</a></span><span class="line">task1_index = 1;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,131" id="srcline131">131</a></span><span class="line">task2_index = 2;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,132" id="srcline132">132</a></span><span class="line"><span class="comment">% ?? Can't multiple packets reach the desitnation at the same time??</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,133" id="srcline133">133</a></span><span class="line">if delay(1,task1_index + 1)~=88</span></span>
+<span class="srcline"><span class="lineno"><a href="1,134" id="srcline134">134</a></span><span class="line">    u_out_P1 = tmp_u_in_P1;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,135" id="srcline135">135</a></span><span class="line">    prev_u_out_P1 = u_out_P1;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,136" id="srcline136">136</a></span><span class="line">    u_out_P2 = prev_u_out_P2;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,137" id="srcline137">137</a></span><span class="line">    <span class="comment">%%%%</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,138" id="srcline138">138</a></span><span class="line">    <span class="comment">% check application interval</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,139" id="srcline139">139</a></span><span class="line">    P1_actu_inter = clock - prev_P1_clock;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,140" id="srcline140">140</a></span><span class="line">    prev_P1_clock = clock;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,141" id="srcline141">141</a></span><span class="line">    prev_P1_actu_inter = P1_actu_inter;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,142" id="srcline142">142</a></span><span class="line">    </span></span>
+<span class="srcline"><span class="lineno"><a href="1,143" id="srcline143">143</a></span><span class="line">    if is_changed(tmp_T1_period)</span></span>
+<span class="srcline"><span class="lineno"><a href="1,144" id="srcline144">144</a></span><span class="line">        broad_interv_P1 = compute_broadcast_interval(P1_actu_inter, clock);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,145" id="srcline145">145</a></span><span class="line">    else</span></span>
+<span class="srcline"><span class="lineno"><a href="1,146" id="srcline146">146</a></span><span class="line">        broad_interv_P1 = 0;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,147" id="srcline147">147</a></span><span class="line">    end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,148" id="srcline148">148</a></span><span class="line">    </span></span>
+<span class="srcline"><span class="lineno"><a href="1,149" id="srcline149">149</a></span><span class="line">    P2_actu_inter = prev_P2_actu_inter;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,150" id="srcline150">150</a></span><span class="line">elseif delay(1,task2_index + 1)~=88</span></span>
+<span class="srcline"><span class="lineno"><a href="1,151" id="srcline151">151</a></span><span class="line">    u_out_P2 = tmp_u_in_P2;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,152" id="srcline152">152</a></span><span class="line">    prev_u_out_P2 = u_out_P2;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,153" id="srcline153">153</a></span><span class="line">    u_out_P1 = prev_u_out_P1;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,154" id="srcline154">154</a></span><span class="line">    <span class="comment">%%%</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,155" id="srcline155">155</a></span><span class="line">    P2_actu_inter = clock - prev_P2_clock;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,156" id="srcline156">156</a></span><span class="line">    prev_P2_clock = clock;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,157" id="srcline157">157</a></span><span class="line">    prev_P2_actu_inter = P2_actu_inter;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,158" id="srcline158">158</a></span><span class="line">    P1_actu_inter = prev_P1_actu_inter;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,159" id="srcline159">159</a></span><span class="line">else</span></span>
+<span class="srcline"><span class="lineno"><a href="1,160" id="srcline160">160</a></span><span class="line">    u_out_P1 = prev_u_out_P1;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,161" id="srcline161">161</a></span><span class="line">    u_out_P2 = prev_u_out_P2;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,162" id="srcline162">162</a></span><span class="line">    P1_actu_inter = prev_P1_actu_inter;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,163" id="srcline163">163</a></span><span class="line">    P2_actu_inter = prev_P2_actu_inter;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,164" id="srcline164">164</a></span><span class="line">end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,165" id="srcline165">165</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,166" id="srcline166">166</a></span><span class="line">T1_period = tmp_T1_period;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,167" id="srcline167">167</a></span><span class="line">P1_PDR = sum(windowbuff)/windowsize;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,168" id="srcline168">168</a></span><span class="line">T1_maxTx = tmp_T1_maxTx;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,169" id="srcline169">169</a></span><span class="line">T1_noise = tmp_T1_noise;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,170" id="srcline170">170</a></span><span class="line">broad_interv_P1 = 0</span></span>
+<span class="srcline"><span class="lineno"><a href="1,171" id="srcline171">171</a></span><span class="line">end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,172" id="srcline172">172</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,173" id="srcline173">173</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,174" id="srcline174">174</a></span><span class="line"><span class="comment">% if the changed actuation_interval is equal to the changed task period,</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,175" id="srcline175">175</a></span><span class="line"><span class="comment">% then outputs the broadcast interval</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,176" id="srcline176">176</a></span><span class="line">function [broad_interv] = compute_broadcast_interval(actu_interv, curr_time)</span></span>
+<span class="srcline"><span class="lineno"><a href="1,177" id="srcline177">177</a></span><span class="line">global Dis_instant_P1</span></span>
+<span class="srcline"><span class="lineno"><a href="1,178" id="srcline178">178</a></span><span class="line">dist_inst = Dis_instant_P1</span></span>
+<span class="srcline"><span class="lineno"><a href="1,179" id="srcline179">179</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,180" id="srcline180">180</a></span><span class="line">if actu_interv == changed_T1_period</span></span>
+<span class="srcline"><span class="lineno"><a href="1,181" id="srcline181">181</a></span><span class="line">    broad_interv = curr_time - dist_inst</span></span>
+<span class="srcline"><span class="lineno"><a href="1,182" id="srcline182">182</a></span><span class="line">else</span></span>
+<span class="srcline"><span class="lineno"><a href="1,183" id="srcline183">183</a></span><span class="line">    broad_interv = 0</span></span>
+<span class="srcline"><span class="lineno"><a href="1,184" id="srcline184">184</a></span><span class="line">end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,185" id="srcline185">185</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,186" id="srcline186">186</a></span><span class="line">end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,187" id="srcline187">187</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,188" id="srcline188">188</a></span><span class="line"><span class="comment">% check if current task period is changed or not</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,189" id="srcline189">189</a></span><span class="line">function [output] = is_changed(curr_task_period)</span></span>
+<span class="srcline"><span class="lineno"><a href="1,190" id="srcline190">190</a></span><span class="line">persistent prev_T1_period</span></span>
+<span class="srcline"><span class="lineno"><a href="1,191" id="srcline191">191</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,192" id="srcline192">192</a></span><span class="line">if isempty(prev_T1_period)</span></span>
+<span class="srcline"><span class="lineno"><a href="1,193" id="srcline193">193</a></span><span class="line">    prev_T1_period = curr_task_period;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,194" id="srcline194">194</a></span><span class="line">    output = False;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,195" id="srcline195">195</a></span><span class="line">    return</span></span>
+<span class="srcline"><span class="lineno"><a href="1,196" id="srcline196">196</a></span><span class="line">end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,197" id="srcline197">197</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,198" id="srcline198">198</a></span><span class="line">if prev_T1_period == curr_task_period;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,199" id="srcline199">199</a></span><span class="line">    output = True;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,200" id="srcline200">200</a></span><span class="line">else</span></span>
+<span class="srcline"><span class="lineno"><a href="1,201" id="srcline201">201</a></span><span class="line">    output = False;</span></span>
+<span class="srcline"><span class="lineno"><a href="1,202" id="srcline202">202</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,203" id="srcline203">203</a></span><span class="line">end</span></span>
+<span class="srcline"><span class="lineno"><a href="1,204" id="srcline204">204</a></span><span class="line"> </span></span>
+</pre>
+</div>
+</body>
+</html>
